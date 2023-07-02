@@ -652,6 +652,16 @@ where
         }
     }
 
+    /// Forces all child components to update position
+    pub fn force_position_update(&mut self) {
+        let components = &mut self.components;
+        for (index, comp) in components.iter().enumerate() {
+            let position = C::position(index);
+            self.widget
+                .factory_update_position(comp.returned_widget().unwrap(), &position);
+        }
+    }
+
     /// Returns the number of elements in the [`AsyncFactoryVecDeque`].
     pub fn len(&self) -> usize {
         self.components.len()
