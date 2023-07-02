@@ -1,6 +1,6 @@
-use gtk::prelude::{BoxExt, Cast, FlowBoxChildExt, GridExt, ListBoxRowExt, WidgetExt};
+use gtk::prelude::{BoxExt, Cast, FlowBoxChildExt, GridExt, ListBoxRowExt, WidgetExt, FixedExt};
 
-use crate::factory::{positions, FactoryView};
+use crate::factory::{positions::{self, FixedPosition}, FactoryView};
 
 impl FactoryView for gtk::Box {
     type Children = gtk::Widget;
@@ -331,22 +331,58 @@ impl FactoryView for gtk::FlowBox {
 //     }
 // }
 
-// impl<Widget> FactoryView<Widget> for gtk::Fixed
-// where
-//     Widget: glib::IsA<gtk::Widget>,
-// {
-//     type Position = FixedPosition;
-//     type Root = Widget;
+impl FactoryView for gtk::Fixed {
+    type Children = gtk::Widget;
+    type ReturnedWidget = gtk::Widget; // or FixedLayoutChild
+    type Position = FixedPosition;
 
-//     fn add(&self, widget: &Widget, position: &FixedPosition) -> Widget {
-//         gtk::prelude::FixedExt::put(self, widget, position.x, position.y);
-//         widget.clone()
-//     }
+    fn factory_remove(&self, widget: &Self::ReturnedWidget) {
+        self.remove(widget);
+    }
 
-//     fn remove(&self, widget: &Widget) {
-//         gtk::prelude::FixedExt::remove(self, widget);
-//     }
-// }
+    fn factory_append(
+        &self,
+        widget: impl AsRef<Self::Children>,
+        position: &Self::Position,
+    ) -> Self::ReturnedWidget {
+        self.put(widget.as_ref(), position.x, position.y);
+        widget.as_ref().clone()
+    }
+
+    fn factory_prepend(
+        &self,
+        widget: impl AsRef<Self::Children>,
+        position: &Self::Position,
+    ) -> Self::ReturnedWidget {
+        self.factory_append(widget, position)
+    }
+
+    fn factory_insert_after(
+        &self,
+        widget: impl AsRef<Self::Children>,
+        position: &Self::Position,
+        _other: &Self::ReturnedWidget,
+    ) -> Self::ReturnedWidget {
+        self.factory_append(widget, position)
+    }
+
+    fn factory_move_after(&self, _widget: &Self::ReturnedWidget, _other: &Self::ReturnedWidget) {
+        // pass, nothing to do, order doesn't matter
+    }
+
+    fn factory_move_start(&self, _widget: &Self::ReturnedWidget) {
+        // pass, nothing to do, order doesn't matter
+    }
+
+    fn returned_widget_to_child(returned_widget: &Self::ReturnedWidget) -> Self::Children {
+        returned_widget.clone()
+    }
+
+    fn factory_update_position(&self, widget: &Self::ReturnedWidget, position: &Self::Position) {
+        self.factory_remove(widget);
+        self.factory_append(widget, position);
+    }
+}
 
 // impl<Widget> FactoryView<Widget> for gtk::Grid
 // where
